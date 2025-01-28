@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Manager Dashboard</title>
+    <style>
+      body {
+        font-family: 'Arial', sans-serif;
+        background: linear-gradient(135deg, #74b9ff, #a29bfe);
+        margin: 0;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      .dashboard-container {
+        background: #ffffff;
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        width: 100%;
+        max-width: 500px;
+        transition: transform 0.3s ease;
+      }
+      .dashboard-container:hover {
+        transform: translateY(-10px);
+      }
+      h1 {
+        color: #2c3e50;
+        font-size: 2.5em;
+        margin-bottom: 20px;
+        font-weight: 600;
+      }
+      p {
+        color: #34495e;
+        font-size: 1.2em;
+        margin-bottom: 30px;
+        line-height: 1.5;
+      }
+      .button {
+        display: inline-block;
+        padding: 12px 30px;
+        background-color: #007bff;
+        color: #fff;
+        font-size: 16px;
+        font-weight: bold;
+        border-radius: 6px;
+        text-decoration: none;
+        margin: 10px;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+      }
+      .button:hover {
+        background-color: #0056b3;
+        transform: scale(1.05);
+      }
+      .button:active {
+        transform: scale(0.98);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="dashboard-container">
+      <h1>Welcome Manager!</h1>
+      <p>
+        As a manager, you have access to manage employees and view reports. Use the options below to navigate.
+      </p>
+      <a href="/view-reports" class="button">View Reports</a>
+      <a href="{% url 'login' %}" class="button">Logout</a>
+    </div>
+  </body>
+</html>
