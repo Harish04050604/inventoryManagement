@@ -12,3 +12,11 @@ class Signup(models.Model):
     
     def __str__(self):
         return self.username
+    
+class Item(models.Model):
+    ItemName = models.CharField(max_length=255, primary_key=True)
+    NumberOfItems = models.IntegerField()
+    SellingPrice = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def __str__(self):
+        return self.ItemName

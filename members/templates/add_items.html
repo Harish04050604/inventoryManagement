@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Add New Item</title>
+    <style>
+      body {
+        font-family: "Arial", sans-serif;
+        background: linear-gradient(135deg, #6c5ce7, #00b894);
+        margin: 0;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      .form-container {
+        background: #ffffff;
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        width: 100%;
+        max-width: 500px;
+      }
+      h1 {
+        color: #2c3e50;
+        font-size: 2em;
+        margin-bottom: 20px;
+      }
+      input,
+      button {
+        width: 90%;
+        padding: 10px;
+        margin: 10px 0;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 16px;
+      }
+      button {
+        background-color: #00b894;
+        color: #fff;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+      }
+      button:hover {
+        background-color: #00a07b;
+        transform: scale(1.05);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="form-container">
+      <h1>Add New Item</h1>
+      <form method="POST">
+        {% csrf_token %}
+        <input type="text" name="item_name" placeholder="Item Name" required />
+        <input
+          type="number"
+          name="number_of_items"
+          placeholder="Number of Items"
+          required
+        />
+        <input
+          type="text"
+          name="selling_price"
+          placeholder="Selling Price"
+          required
+        />
+        <button type="submit">Submit</button>
+      </form>
+    </div>
+  </body>
+</html>

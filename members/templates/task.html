@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Task List</title>
+    <style>
+      body {
+        font-family: "Arial", sans-serif;
+        background: linear-gradient(135deg, #6c5ce7, #00b894);
+        margin: 0;
+        padding: 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+      .task-container {
+        background: #fff;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        max-width: 700px;
+        width: 100%;
+      }
+      h1 {
+        color: #2c3e50;
+        font-size: 2em;
+        margin-bottom: 20px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+      }
+      th,
+      td {
+        padding: 12px;
+        border: 1px solid #ddd;
+        text-align: center;
+      }
+      th {
+        background-color: #00b894;
+        color: #fff;
+        font-weight: bold;
+      }
+      tr:nth-child(even) {
+        background-color: #f2f2f2;
+      }
+      tr:hover {
+        background-color: #eafaf1;
+      }
+      .button {
+        display: inline-block;
+        padding: 12px 20px;
+        background-color: #00b894;
+        color: #fff;
+        font-size: 16px;
+        font-weight: bold;
+        border-radius: 6px;
+        text-decoration: none;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+      }
+      .button:hover {
+        background-color: #009972;
+        transform: scale(1.05);
+      }
+      button {
+        padding: 8px 15px;
+        font-size: 16px;
+        font-weight: bold;
+        border: none;
+        cursor: pointer;
+        border-radius: 5px;
+        margin: 3px;
+        transition: all 0.2s ease;
+      }
+      button:hover {
+        opacity: 0.8;
+      }
+      .increase {
+        background-color: #2ecc71;
+        color: white;
+      }
+      .decrease {
+        background-color: #e74c3c;
+        color: white;
+      }
+      @media (max-width: 768px) {
+        .task-container {
+          padding: 20px;
+        }
+        table {
+          font-size: 14px;
+        }
+        button {
+          padding: 6px 12px;
+          font-size: 14px;
+        }
+      }
+    </style>
+    <script>
+      function updateQuantity(itemName, action) {
+        fetch("{% url 'update_quantity' %}", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "X-CSRFToken": "{{ csrf_token }}",
+          },
+          body: `item_name=${itemName}&action=${action}`,
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              document.getElementById(`count-${itemName}`).innerText =
+                data.new_quantity;
+            }
+          });
+      }
+    </script>
+  </head>
+  <body>
+    <div class="task-container">
+      <h1>Task List</h1>
+      <table>
+        <tr>
+          <th>Item Name</th>
+          <th>Number of Items</th>
+          <th>Price</th>
+          <th>Actions</th>
+        </tr>
+        {% for item in items %}
+        <tr>
+          <td>{{ item.ItemName }}</td>
+          <td id="count-{{ item.ItemName }}">{{ item.NumberOfItems }}</td>
+          <td>{{ item.SellingPrice }}</td>
+          <td>
+            <button
+              class="increase"
+              onclick="updateQuantity('{{ item.ItemName }}', 'increase')"
+            >
+              +
+            </button>
+            <button
+              class="decrease"
+              onclick="updateQuantity('{{ item.ItemName }}', 'decrease')"
+            >
+              -
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </table>
+      <a href="{% url 'add_items' %}" class="button">Add New Item</a>
+    </div>
+  </body>
+</html>
