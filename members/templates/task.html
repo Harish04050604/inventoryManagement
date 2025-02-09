@@ -118,6 +118,34 @@
             }
           });
       }
+      function deleteItem(itemName) {
+        if (confirm(`Are you sure you want to delete ${itemName}?`)) {
+          fetch("{% url 'delete_item' %}", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+              "X-CSRFToken": "{{ csrf_token }}",
+            },
+            body: `item_name=${itemName}`,
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              if (data.success) {
+                // Remove the table row from the UI
+                const row = document.querySelector(
+                  `tr:has(td[id="count-${itemName}"])`
+                );
+                row.remove();
+              } else {
+                alert("Error deleting item. Please try again.");
+              }
+            })
+            .catch((error) => {
+              console.error("Error:", error);
+              alert("Error deleting item. Please try again.");
+            });
+        }
+      }
     </script>
   </head>
   <body>
@@ -148,11 +176,27 @@
             >
               -
             </button>
+            <button
+              class="delete"
+              onclick="deleteItem('{{ item.ItemName }}')"
+              style="
+                background-color: #e74c3c;
+                color: white;
+                border: none;
+                padding: 8px 12px;
+                cursor: pointer;
+                border-radius: 5px;
+                margin-left: 5px;
+              "
+            >
+              🗑️
+            </button>
           </td>
         </tr>
         {% endfor %}
       </table>
       <a href="{% url 'add_items' %}" class="button">Add New Item</a>
+      <a href="{% url 'staff' %}" class="button">Back</a>
     </div>
   </body>
 </html>

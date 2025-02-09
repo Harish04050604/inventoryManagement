@@ -86,3 +86,53 @@ def update_quantity(request):
         return JsonResponse({"success": True, "new_quantity": item.NumberOfItems})
 
     return JsonResponse({"success": False})
+
+# def delete_item(request):
+#     if request.method == 'POST':
+#         item_name = request.POST.get('item_name')
+#         try:
+#             # Assuming you have a model named Item
+#             Item.objects.filter(ItemName=item_name).delete()
+#             return JsonResponse({'success': True})
+#         except Exception as e:
+#             return JsonResponse({'success': False, 'error': str(e)})
+#     return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@csrf_exempt  # Only if you're having CSRF issues during testing
+def delete_item(request):
+    if request.method == 'POST':
+        try:
+            item_name = request.POST.get('item_name')
+            if not item_name:
+                return JsonResponse({'success': False, 'error': 'Item name is required'})
+            
+            # Get the item and delete it
+            item = Item.objects.get(ItemName=item_name)
+            item.delete()
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Item {item_name} successfully deleted'
+            })
+            
+        except Item.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'error': f'Item {item_name} not found'
+            })
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            })
+    
+    return JsonResponse({
+        'success': False,
+        'error': 'Invalid request method'
+    })
+
+def task_list(request):  # or whatever your main view is called
+    items = Item.objects.all()
+    return render(request, 'your_template.html', {
+        'items': items,
+    })

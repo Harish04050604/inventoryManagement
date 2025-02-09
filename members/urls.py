@@ -7,7 +7,9 @@ urlpatterns = [
     path('login/', views.login, name='login'),
     path('manager/', views.manager, name='manager'),
     path('staff/', views.staff, name='staff'),
-    path('view-tasks/', views.view_tasks, name='view_tasks'),
-    path('add-items/', views.add_items, name='add_items'),
-    path('update-quantity/', views.update_quantity, name='update_quantity'),
+    path('view_tasks/', views.view_tasks, name='view_tasks'),
+    path('add_items/', views.add_items, name='add_items'),
+    path('update_quantity/', views.update_quantity, name='update_quantity'),
+    path('delete-item/', views.delete_item, name='delete_item'),
+    path('task-list/', views.task_list, name='task_list'),
 ]
