@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Edit Item</title>
+    <style>
+      body {
+        font-family: "Arial", sans-serif;
+        background: linear-gradient(135deg, #6c5ce7, #00b894);
+        margin: 0;
+        padding: 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+      }
+      .edit-container {
+        background: #fff;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 500px;
+      }
+      h1 {
+        color: #2c3e50;
+        text-align: center;
+        margin-bottom: 30px;
+      }
+      .form-group {
+        margin-bottom: 20px;
+      }
+      label {
+        display: block;
+        margin-bottom: 8px;
+        color: #2c3e50;
+        font-weight: bold;
+      }
+      input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 16px;
+        box-sizing: border-box;
+      }
+      .button-group {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin-top: 30px;
+      }
+      .button {
+        padding: 12px 25px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: all 0.3s ease;
+      }
+      .save-button {
+        background-color: #00b894;
+        color: white;
+      }
+      .cancel-button {
+        background-color: #95a5a6;
+        color: white;
+      }
+      .button:hover {
+        opacity: 0.9;
+        transform: scale(1.05);
+      }
+      .error-message {
+        color: #e74c3c;
+        margin-top: 5px;
+        font-size: 14px;
+      }
+      .messages {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+      }
+
+      .message {
+        padding: 15px 25px;
+        margin-bottom: 10px;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      }
+
+      .success {
+        background-color: #2ecc71;
+        color: white;
+      }
+
+      .error {
+        background-color: #e74c3c;
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="edit-container">
+      <h1>Edit Item</h1>
+      <form method="POST" action="{% url 'edit_item' item.ItemName %}">
+        {% csrf_token %}
+        <div class="form-group">
+          <label for="item_name">Item Name:</label>
+          <input
+            type="text"
+            id="item_name"
+            name="item_name"
+            value="{{ item.ItemName }}"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label for="number_of_items">Number of Items:</label>
+          <input
+            type="number"
+            id="number_of_items"
+            name="number_of_items"
+            value="{{ item.NumberOfItems }}"
+            required
+            min="0"
+          />
+        </div>
+        <div class="form-group">
+          <label for="selling_price">Selling Price:</label>
+          <input
+            type="number"
+            id="selling_price"
+            name="selling_price"
+            value="{{ item.SellingPrice }}"
+            required
+            step="0.01"
+            min="0"
+          />
+        </div>
+        <div class="button-group">
+          <button type="submit" class="button save-button">Save Changes</button>
+          <a
+            href="{% url 'task_list' %}"
+            class="button cancel-button"
+            style="text-decoration: none"
+            >Cancel</a
+          >
+        </div>
+      </form>
+    </div>
+  </body>
+</html>

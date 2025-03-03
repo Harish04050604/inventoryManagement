@@ -1,7 +1,12 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect,get_object_or_404
 from .models import Signup
 from .models import Item
 from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+from django.contrib import messages
+from django.shortcuts import render, redirect, get_object_or_404
+from django.views.decorators.csrf import ensure_csrf_cookie
+from .models import Item 
 from django.http import JsonResponse
 
 def login(request):
@@ -87,17 +92,6 @@ def update_quantity(request):
 
     return JsonResponse({"success": False})
 
-# def delete_item(request):
-#     if request.method == 'POST':
-#         item_name = request.POST.get('item_name')
-#         try:
-#             # Assuming you have a model named Item
-#             Item.objects.filter(ItemName=item_name).delete()
-#             return JsonResponse({'success': True})
-#         except Exception as e:
-#             return JsonResponse({'success': False, 'error': str(e)})
-#     return JsonResponse({'success': False, 'error': 'Invalid request method'})
-
 @csrf_exempt  # Only if you're having CSRF issues during testing
 def delete_item(request):
     if request.method == 'POST':
@@ -136,3 +130,36 @@ def task_list(request):  # or whatever your main view is called
     return render(request, 'your_template.html', {
         'items': items,
     })
+
+@ensure_csrf_cookie
+def edit_item(request, item_name):
+    # Get the item or return 404 if not found
+    item = get_object_or_404(Item, ItemName=item_name)
+    
+    if request.method == 'POST':
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        
+        try:
+            # Get form data
+            new_item_name = request.POST.get('item_name')
+            number_of_items = request.POST.get('number_of_items')
+            selling_price = request.POST.get('selling_price')
+            
+            # Update item
+            item.ItemName = new_item_name
+            item.NumberOfItems = number_of_items
+            item.SellingPrice = selling_price
+            item.save()
+            
+            if is_ajax:
+                return JsonResponse({'success': True})
+            
+            return redirect('view_tasks')
+            
+        except Exception as e:
+            if is_ajax:
+                return JsonResponse({'success': False, 'error': str(e)})
+
+            return render(request, 'edit_item.html', {'item': item, 'error': str(e)})
+    
+    return render(request, 'edit_item.html', {'item': item})
