@@ -14,9 +14,11 @@ class Signup(models.Model):
         return self.username
     
 class Item(models.Model):
-    ItemName = models.CharField(max_length=255, primary_key=True)
+    id = models.AutoField(primary_key=True)  # Add this
+    ItemName = models.CharField(max_length=255, unique=True)  # Remove primary_key
     NumberOfItems = models.IntegerField()
     SellingPrice = models.DecimalField(max_digits=10, decimal_places=2)
 
     def __str__(self):
         return self.ItemName
+

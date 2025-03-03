@@ -133,33 +133,23 @@ def task_list(request):  # or whatever your main view is called
 
 @ensure_csrf_cookie
 def edit_item(request, item_name):
-    # Get the item or return 404 if not found
     item = get_object_or_404(Item, ItemName=item_name)
-    
-    if request.method == 'POST':
-        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
-        
-        try:
-            # Get form data
-            new_item_name = request.POST.get('item_name')
-            number_of_items = request.POST.get('number_of_items')
-            selling_price = request.POST.get('selling_price')
-            
-            # Update item
-            item.ItemName = new_item_name
-            item.NumberOfItems = number_of_items
-            item.SellingPrice = selling_price
-            item.save()
-            
-            if is_ajax:
-                return JsonResponse({'success': True})
-            
-            return redirect('view_tasks')
-            
-        except Exception as e:
-            if is_ajax:
-                return JsonResponse({'success': False, 'error': str(e)})
 
-            return render(request, 'edit_item.html', {'item': item, 'error': str(e)})
-    
+    if request.method == 'POST':
+        new_item_name = request.POST.get('item_name')
+        number_of_items = request.POST.get('number_of_items')
+        selling_price = request.POST.get('selling_price')
+
+        # Ensure new name does not already exist (except for this item)
+        if new_item_name != item.ItemName and Item.objects.filter(ItemName=new_item_name).exists():
+            return render(request, 'edit_item.html', {'item': item, 'error': 'Item name already exists'})
+
+        # Update fields
+        item.ItemName = new_item_name
+        item.NumberOfItems = number_of_items
+        item.SellingPrice = selling_price
+        item.save()
+
+        return redirect('view_tasks')
+
     return render(request, 'edit_item.html', {'item': item})
