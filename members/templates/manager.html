@@ -6,7 +6,7 @@
     <title>Manager Dashboard</title>
     <style>
       body {
-        font-family: 'Arial', sans-serif;
+        font-family: "Arial", sans-serif;
         background: linear-gradient(135deg, #74b9ff, #a29bfe);
         margin: 0;
         height: 100vh;
@@ -64,9 +64,10 @@
     <div class="dashboard-container">
       <h1>Welcome Manager!</h1>
       <p>
-        As a manager, you have access to manage employees and view reports. Use the options below to navigate.
+        As a manager, you have access to manage employees and view reports. Use
+        the options below to navigate.
       </p>
-      <a href="/view_reports" class="button">View Reports</a>
+      <a href="{% url 'view_report' %}" class="button">View Report</a>
       <a href="{% url 'login' %}" class="button">Logout</a>
     </div>
   </body>

@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Edit Item</title>
+    <title>Add Item</title>
     <style>
       body {
         font-family: "Arial", sans-serif;
@@ -103,44 +103,33 @@
   </head>
   <body>
     <div class="edit-container">
-      <h1>Edit Item</h1>
-      <form method="POST" action="{% url 'edit_item' item.ItemName %}">
+      <h1>Add Item</h1>
+      <form method="POST" action="{% url 'add_item' item.ItemName %}">
         {% csrf_token %}
         <div class="form-group">
-          <label for="item_name">Item Name:</label>
-          <input
-            type="text"
-            id="item_name"
-            name="item_name"
-            value="{{ item.ItemName }}"
-            required
-          />
+          <label for="item_name">Item Name: {{ item.ItemName }}</label>
         </div>
         <div class="form-group">
-          <label for="number_of_items">Number of Items:</label>
+          <label for="number_of_items">Number of Items to add:</label>
           <input
             type="number"
             id="number_of_items"
             name="number_of_items"
-            value="{{ item.NumberOfItems }}"
+            value="10"
             required
             min="0"
           />
         </div>
         <div class="form-group">
-          <label for="selling_price">Selling Price:</label>
-          <input
-            type="number"
-            id="selling_price"
-            name="selling_price"
-            value="{{ item.SellingPrice }}"
-            required
-            step="0.01"
-            min="0"
-          />
+          <label for="selling_price"
+            >Items remaining: {{ item.NumberOfItems }}</label
+          >
+          <label for="selling_price"
+            >Price per unit: Rs {{ item.SellingPrice }}</label
+          >
         </div>
         <div class="button-group">
-          <button type="submit" class="button save-button">Save Changes</button>
+          <button type="submit" class="button save-button">Add Items</button>
           <a
             href="{% url 'view_tasks' %}"
             class="button cancel-button"

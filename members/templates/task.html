@@ -181,15 +181,15 @@
             </button>
             <button
               class="increase"
-              onclick="updateQuantity('{{ item.ItemName }}', 'increase')"
+              onclick="window.location.href='{% url 'add_item' item.ItemName %}'"
             >
               Add
             </button>
             <button
               class="decrease"
-              onclick="updateQuantity('{{ item.ItemName }}', 'decrease')"
+              onclick="window.location.href='{% url 'sell_item' item.ItemName %}'"
             >
-              Sold
+              Sell
             </button>
             <button
               class="delete"

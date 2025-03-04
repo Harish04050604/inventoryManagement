@@ -1,0 +1,359 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sell Item</title>
+    <style>
+      body {
+        font-family: "Arial", sans-serif;
+        background: linear-gradient(135deg, #6c5ce7, #00b894);
+        margin: 0;
+        padding: 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+      }
+      .sell-container {
+        background: #fff;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 500px;
+      }
+      h1 {
+        color: #2c3e50;
+        text-align: center;
+        margin-bottom: 30px;
+      }
+      .item-details {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+      }
+      .item-details p {
+        margin: 8px 0;
+        font-size: 16px;
+      }
+      .item-name {
+        font-weight: bold;
+        font-size: 18px;
+        color: #2c3e50;
+      }
+      .item-price {
+        color: #00b894;
+        font-weight: bold;
+      }
+      .form-group {
+        margin-bottom: 20px;
+      }
+      label {
+        display: block;
+        margin-bottom: 8px;
+        color: #2c3e50;
+        font-weight: bold;
+      }
+      input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 16px;
+        box-sizing: border-box;
+      }
+      .button-group {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin-top: 30px;
+      }
+      .button {
+        padding: 12px 25px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: all 0.3s ease;
+      }
+      .sell-button {
+        background-color: #00b894;
+        color: white;
+      }
+      .cancel-button {
+        background-color: #95a5a6;
+        color: white;
+      }
+      .button:hover {
+        opacity: 0.9;
+        transform: scale(1.05);
+      }
+      .error-message {
+        color: #e74c3c;
+        margin-top: 5px;
+        font-size: 14px;
+      }
+      .summary {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #eee;
+      }
+      .total {
+        font-size: 18px;
+        font-weight: bold;
+        color: #2c3e50;
+        text-align: right;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="sell-container">
+      <h1>Sell Item</h1>
+
+      <div class="item-details">
+        <p class="item-name">{{ item.ItemName }}</p>
+        <p>
+          Available Stock:
+          <span id="available-stock">{{ item.NumberOfItems }}</span>
+        </p>
+        <p class="item-price">Price per unit: Rs {{ item.SellingPrice }}</p>
+      </div>
+
+      <form
+        method="POST"
+        action="{% url 'sell_item' item.ItemName %}"
+        id="sellForm"
+      >
+        {% csrf_token %} {% if error %}
+        <div class="error-message">{{ error }}</div>
+        {% endif %}
+
+        <div class="form-group">
+          <label for="quantity">Quantity to Sell:</label>
+          <input
+            type="number"
+            id="quantity"
+            name="quantity"
+            value="1"
+            required
+            min="1"
+            max="{{ item.NumberOfItems }}"
+          />
+          <div class="error-message" id="quantity-error" style="display: none">
+            Cannot sell more than available stock
+          </div>
+        </div>
+
+        <div class="summary">
+          <p>
+            Unit Price: Rs <span id="unit-price">{{ item.SellingPrice }}</span>
+          </p>
+          <p class="total">
+            Total: Rs <span id="total-price">{{ item.SellingPrice }}</span>
+          </p>
+        </div>
+
+        <div class="button-group">
+          <button type="submit" class="button sell-button">
+            Complete Sale
+          </button>
+          <a
+            href="{% url 'view_tasks' %}"
+            class="button cancel-button"
+            style="text-decoration: none"
+            >Cancel</a
+          >
+        </div>
+      </form>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const quantityInput = document.getElementById("quantity");
+        const unitPriceElement = document.getElementById("unit-price");
+        const totalPriceElement = document.getElementById("total-price");
+        const availableStock = parseInt(
+          document.getElementById("available-stock").textContent
+        );
+        const quantityError = document.getElementById("quantity-error");
+        const sellForm = document.getElementById("sellForm");
+
+        // Update total price when quantity changes
+        quantityInput.addEventListener("input", function () {
+          const quantity = parseInt(this.value);
+          const unitPrice = parseFloat(unitPriceElement.textContent);
+
+          // Validate quantity
+          if (quantity > availableStock) {
+            quantityError.style.display = "block";
+          } else {
+            quantityError.style.display = "none";
+          }
+
+          // Update total price
+          if (!isNaN(quantity) && !isNaN(unitPrice)) {
+            const totalPrice = (quantity * unitPrice).toFixed(2);
+            totalPriceElement.textContent = totalPrice;
+          }
+        });
+
+        // Form validation before submit
+        sellForm.addEventListener("submit", function (e) {
+          const quantity = parseInt(quantityInput.value);
+
+          if (quantity > availableStock) {
+            e.preventDefault();
+            quantityError.style.display = "block";
+            quantityInput.focus();
+          }
+        });
+      });
+    </script>
+  </body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sell Item</title>
+    <style>
+      body {
+        font-family: "Arial", sans-serif;
+        background: linear-gradient(135deg, #6c5ce7, #00b894);
+        margin: 0;
+        padding: 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+      }
+      .edit-container {
+        background: #fff;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 500px;
+      }
+      h1 {
+        color: #2c3e50;
+        text-align: center;
+        margin-bottom: 30px;
+      }
+      .form-group {
+        margin-bottom: 20px;
+      }
+      label {
+        display: block;
+        margin-bottom: 8px;
+        color: #2c3e50;
+        font-weight: bold;
+      }
+      input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 16px;
+        box-sizing: border-box;
+      }
+      .button-group {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin-top: 30px;
+      }
+      .button {
+        padding: 12px 25px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: all 0.3s ease;
+      }
+      .save-button {
+        background-color: #00b894;
+        color: white;
+      }
+      .cancel-button {
+        background-color: #95a5a6;
+        color: white;
+      }
+      .button:hover {
+        opacity: 0.9;
+        transform: scale(1.05);
+      }
+      .error-message {
+        color: #e74c3c;
+        margin-top: 5px;
+        font-size: 14px;
+      }
+      .messages {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+      }
+
+      .message {
+        padding: 15px 25px;
+        margin-bottom: 10px;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      }
+
+      .success {
+        background-color: #2ecc71;
+        color: white;
+      }
+
+      .error {
+        background-color: #e74c3c;
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="edit-container">
+      <h1>Sell Item</h1>
+      <form method="POST" action="{% url 'sell_item' item.ItemName %}">
+        {% csrf_token %}
+        <div class="form-group">
+          <label for="item_name">Item Name: {{ item.ItemName }}</label>
+        </div>
+        <div class="form-group">
+          <label for="number_of_items">Number of Items to sell:</label>
+          <input
+            type="number"
+            id="number_of_items"
+            name="number_of_items"
+            value="10"
+            required
+            min="0"
+          />
+        </div>
+        <div class="form-group">
+          <label for="selling_price"
+            >Items remaining: {{ item.NumberOfItems }}</label
+          >
+          <label for="selling_price"
+            >Price per unit: Rs {{ item.SellingPrice }}</label
+          >
+        </div>
+        <div class="button-group">
+          <button type="submit" class="button save-button">Sell Items</button>
+          <a
+            href="{% url 'view_tasks' %}"
+            class="button cancel-button"
+            style="text-decoration: none"
+            >Cancel</a
+          >
+        </div>
+      </form>
+    </div>
+  </body>
+</html>

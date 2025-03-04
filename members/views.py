@@ -1,13 +1,28 @@
+from gettext import translation
 from django.shortcuts import render, redirect,get_object_or_404
 from .models import Signup
 from .models import Item
 from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.csrf import ensure_csrf_cookie
 from .models import Item 
 from django.http import JsonResponse
+from .models import Item
+from django.shortcuts import render, redirect,get_object_or_404
+from .models import Signup
+from .models import Item
+from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse, JsonResponse
+from django.contrib import messages
+from django.shortcuts import render, redirect, get_object_or_404
+from django.views.decorators.csrf import ensure_csrf_cookie
+from .models import Item 
+from django.http import JsonResponse
+from reportlab.pdfgen import canvas
+from .models import Item
+from reportlab.lib.pagesizes import letter
 
 def login(request):
     if request.method == 'POST':
@@ -153,3 +168,100 @@ def edit_item(request, item_name):
         return redirect('view_tasks')
 
     return render(request, 'edit_item.html', {'item': item})
+
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib import messages
+from .models import Item
+
+def add_item(request, item_name):
+    item = get_object_or_404(Item, ItemName=item_name)  # Fetch item or return 404
+
+    if request.method == 'POST':
+        number_of_items = int(request.POST.get('number_of_items', 0))  # Get added quantity
+
+        if number_of_items > 0:
+            item.NumberOfItems += number_of_items  # Increase stock
+            item.save()
+            messages.success(request, f'Successfully added {number_of_items} units to {item.ItemName}.')
+            return redirect('view_tasks')  # Redirect after successful update
+        else:
+            messages.error(request, 'Invalid quantity. Please enter a positive number.')
+
+    return render(request, 'add_item.html', {'item': item})
+
+
+from django.shortcuts import render, get_object_or_404, redirect
+from django.db import transaction
+from django.utils import timezone
+from django.contrib import messages
+from .models import Item, Sale  # Assuming these models exist
+
+def sell_item(request, item_name):
+    item = get_object_or_404(Item, ItemName=item_name)
+
+    if request.method == 'POST':
+        try:
+            quantity_to_sell = int(request.POST.get('number_of_items', 1))
+
+            if quantity_to_sell <= 0:
+                messages.error(request, 'Quantity must be greater than zero.')
+                return redirect('sell_item', item_name=item.ItemName)
+
+            if quantity_to_sell > item.NumberOfItems:
+                messages.error(request, f'Cannot sell more than available stock ({item.NumberOfItems}).')
+                return redirect('sell_item', item_name=item.ItemName)
+
+            with transaction.atomic():  # Ensure DB changes are saved
+                item.NumberOfItems -= quantity_to_sell
+                item.save()
+
+                print(f"Updated Quantity for {item.ItemName}: {item.NumberOfItems}")  # Debugging
+
+            messages.success(request, f'Successfully sold {quantity_to_sell} units of {item.ItemName}.')
+            return redirect('view_tasks')  # Redirect to task list after selling
+
+        except ValueError:
+            messages.error(request, 'Invalid quantity entered.')
+            return redirect('sell_item', item_name=item.ItemName)
+        except Exception as e:
+            messages.error(request, f'An error occurred: {str(e)}')
+            return redirect('sell_item', item_name=item.ItemName)
+
+    return render(request, 'sell_item.html', {'item': item})
+
+def generate_report(request):
+    """Renders the inventory report in HTML format."""
+    items = Item.objects.all()
+    return render(request, 'report.html', {'items': items})
+
+def generate_pdf(request):
+    """Generates and downloads the inventory report as a PDF."""
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="inventory_report.pdf"'
+
+    pdf = canvas.Canvas(response, pagesize=letter)
+    pdf.setTitle("Inventory Report")
+
+    # Title
+    pdf.setFont("Helvetica-Bold", 16)
+    pdf.drawCentredString(300, 800, "Inventory Report")
+
+    # Table Headers
+    pdf.setFont("Helvetica-Bold", 12)
+    pdf.drawString(50, 750, "Item Name")
+    pdf.drawString(250, 750, "Quantity")
+    pdf.drawString(450, 750, "Selling Price (Rs)")
+
+    # Data
+    y = 730
+    pdf.setFont("Helvetica", 12)
+    items = Item.objects.all()
+
+    for item in items:
+        pdf.drawString(50, y, item.ItemName)
+        pdf.drawString(270, y, str(item.NumberOfItems))
+        pdf.drawRightString(500, y, f"{item.SellingPrice:.2f}")
+        y -= 20  # Move down
+
+    pdf.save()
+    return response
