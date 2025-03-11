@@ -74,21 +74,42 @@ def view_tasks(request):
     items = Item.objects.all()
     return render(request, 'task.html', {'items': items})
 
+from django.utils.timezone import now
+from .models import AddItem  # Import AddItem model
+
 def add_items(request):
     if request.method == "POST":
         item_name = request.POST.get("item_name")
         number_of_items = request.POST.get("number_of_items")
         selling_price = request.POST.get("selling_price")
+        date_of_production = request.POST.get("date_of_production")
+        total_production_cost = request.POST.get("total_production_cost")
 
-        if item_name and number_of_items and selling_price:
-            Item.objects.create(
+        if item_name and number_of_items and selling_price and date_of_production and total_production_cost:
+            item, created = Item.objects.get_or_create(
                 ItemName=item_name,
-                NumberOfItems=int(number_of_items),
-                SellingPrice=float(selling_price)
+                defaults={
+                    "NumberOfItems": int(number_of_items),
+                    "SellingPrice": float(selling_price),
+                },
             )
-            return redirect('view_tasks')  # Redirect to task page after adding
 
-    return render(request, 'add_items.html')
+            # Update quantity if item exists
+            if not created:
+                item.NumberOfItems += int(number_of_items)
+                item.save()
+
+            # Store production details in AddItem model
+            AddItem.objects.create(
+                item=item,
+                date_of_production=date_of_production,
+                total_items_produced=int(number_of_items),  # Use same value
+                total_production_cost=float(total_production_cost),
+            )
+
+            return redirect("view_tasks")
+
+    return render(request, "add_items.html")
 
 @csrf_exempt
 def update_quantity(request):
@@ -169,32 +190,41 @@ def edit_item(request, item_name):
 
     return render(request, 'edit_item.html', {'item': item})
 
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib import messages
-from .models import Item
-
 def add_item(request, item_name):
-    item = get_object_or_404(Item, ItemName=item_name)  # Fetch item or return 404
+    item = get_object_or_404(Item, ItemName=item_name)
 
-    if request.method == 'POST':
-        number_of_items = int(request.POST.get('number_of_items', 0))  # Get added quantity
+    if request.method == "POST":
+        number_of_items = int(request.POST.get("number_of_items", 0))
+        date_of_production = request.POST.get("date_of_production")
+        total_production_cost = request.POST.get("total_production_cost")
 
-        if number_of_items > 0:
-            item.NumberOfItems += number_of_items  # Increase stock
+        if number_of_items > 0 and date_of_production and total_production_cost:
+            # Update total number of items in inventory
+            item.NumberOfItems += number_of_items
             item.save()
-            messages.success(request, f'Successfully added {number_of_items} units to {item.ItemName}.')
-            return redirect('view_tasks')  # Redirect after successful update
-        else:
-            messages.error(request, 'Invalid quantity. Please enter a positive number.')
 
-    return render(request, 'add_item.html', {'item': item})
+            # Store only the new quantity in history
+            AddItem.objects.create(
+                item=item,
+                date_of_production=date_of_production,
+                total_items_produced=number_of_items,  # Only new quantity
+                total_production_cost=float(total_production_cost),
+            )
+
+            messages.success(request, f"Successfully added {number_of_items} units to {item.ItemName}.")
+            return redirect("view_tasks")
+        else:
+            messages.error(request, "Please provide valid details.")
+
+    return render(request, "add_item.html", {"item": item})
+
 
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.db import transaction
 from django.utils import timezone
 from django.contrib import messages
-from .models import Item, Sale  # Assuming these models exist
+from .models import Item, SellItem  # Ensure SellItem model is imported
 
 def sell_item(request, item_name):
     item = get_object_or_404(Item, ItemName=item_name)
@@ -211,23 +241,31 @@ def sell_item(request, item_name):
                 messages.error(request, f'Cannot sell more than available stock ({item.NumberOfItems}).')
                 return redirect('sell_item', item_name=item.ItemName)
 
-            with transaction.atomic():  # Ensure DB changes are saved
+            total_sales_price = quantity_to_sell * item.SellingPrice  # Calculate total price
+
+            with transaction.atomic():  
+                # Deduct sold items from inventory
                 item.NumberOfItems -= quantity_to_sell
                 item.save()
 
-                print(f"Updated Quantity for {item.ItemName}: {item.NumberOfItems}")  # Debugging
+                # Store sale in SellItem table
+                SellItem.objects.create(
+                    item=item,
+                    date_of_sales=timezone.now().date(),
+                    total_items_sold=quantity_to_sell,
+                    total_sales_price=total_sales_price
+                )
 
             messages.success(request, f'Successfully sold {quantity_to_sell} units of {item.ItemName}.')
-            return redirect('view_tasks')  # Redirect to task list after selling
+            return redirect('view_tasks')  
 
         except ValueError:
             messages.error(request, 'Invalid quantity entered.')
-            return redirect('sell_item', item_name=item.ItemName)
         except Exception as e:
             messages.error(request, f'An error occurred: {str(e)}')
-            return redirect('sell_item', item_name=item.ItemName)
 
     return render(request, 'sell_item.html', {'item': item})
+
 
 def generate_report(request):
     """Renders the inventory report in HTML format."""

@@ -9,12 +9,12 @@
         font-family: "Arial", sans-serif;
         background: linear-gradient(135deg, #6c5ce7, #00b894);
         margin: 0;
-        height: 100vh;
         display: flex;
         justify-content: center;
         align-items: center;
+        min-height: 100vh;
       }
-      .form-container {
+      .container {
         background: #ffffff;
         padding: 40px;
         border-radius: 12px;
@@ -28,64 +28,88 @@
         font-size: 2em;
         margin-bottom: 20px;
       }
-      input,
-      button {
-        width: 90%;
+      .form-group {
+        text-align: left;
+        margin-bottom: 15px;
+      }
+      label {
+        display: block;
+        margin-bottom: 6px;
+        color: #2c3e50;
+        font-weight: bold;
+      }
+      input {
+        width: 100%;
         padding: 10px;
-        margin: 10px 0;
         border: 1px solid #ccc;
         border-radius: 6px;
         font-size: 16px;
+        box-sizing: border-box;
+      }
+      .button-group {
+        display: flex;
+        justify-content: center;
+        margin-top: 20px;
       }
       button {
-        background-color: #00b894;
-        color: #fff;
-        font-weight: bold;
-        cursor: pointer;
-        transition: background-color 0.3s ease, transform 0.2s ease;
-      }
-      button:hover {
-        background-color: #00a07b;
-        transform: scale(1.05);
-      }
-      .button {
-        display: inline-block;
         padding: 12px 20px;
-        background-color: #00b894;
-        color: #fff;
-        font-size: 16px;
-        font-weight: bold;
+        border: none;
         border-radius: 6px;
-        text-decoration: none;
-        transition: background-color 0.3s ease, transform 0.2s ease;
+        cursor: pointer;
+        font-weight: bold;
+        transition: all 0.3s ease;
+        font-size: 16px;
       }
-      .button:hover {
+      .add-button {
+        background-color: #00b894;
+        color: white;
+      }
+      .add-button:hover {
         background-color: #009972;
         transform: scale(1.05);
       }
     </style>
   </head>
+
   <body>
-    <div class="form-container">
+    <div class="container">
       <h1>Add New Item</h1>
       <form method="POST">
         {% csrf_token %}
-        <input type="text" name="item_name" placeholder="Item Name" required />
-        <input
-          type="number"
-          name="number_of_items"
-          placeholder="Number of Items"
-          required
-        />
-        <input
-          type="text"
-          name="selling_price"
-          placeholder="Selling Price"
-          required
-        />
-        <button type="submit">Submit</button>
-        <!-- <a class="button" type="submit" style="cursor: pointer;">Submit</a> -->
-        <a href="{% url 'view_tasks' %}" class="button">Back</a>
+        <div class="form-group">
+          <label>Item Name:</label>
+          <input type="text" name="item_name" required />
+        </div>
+
+        <div class="form-group">
+          <label>Number of Items (Total Items Produced):</label>
+          <input
+            type="number"
+            name="number_of_items"
+            id="number_of_items"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Selling Price:</label>
+          <input type="text" name="selling_price" required />
+        </div>
+
+        <h2>Production Details</h2>
+        <div class="form-group">
+          <label>Date of Production:</label>
+          <input type="date" name="date_of_production" required />
+        </div>
+
+        <div class="form-group">
+          <label>Total Production Cost:</label>
+          <input type="text" name="total_production_cost" required />
+        </div>
+
+        <div class="button-group">
+          <button type="submit" class="add-button">Add Item</button>
+        </div>
       </form>
     </div>
   </body>
