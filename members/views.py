@@ -23,6 +23,8 @@ from django.http import JsonResponse
 from reportlab.pdfgen import canvas
 from .models import Item
 from reportlab.lib.pagesizes import letter
+import os
+from django.conf import settings
 
 def login(request):
     if request.method == 'POST':
@@ -270,36 +272,95 @@ def sell_item(request, item_name):
 def generate_report(request):
     """Renders the inventory report in HTML format."""
     items = Item.objects.all()
-    return render(request, 'report.html', {'items': items})
+    sell_items=SellItem.objects.all()
+    return render(request, "report.html", {"sell_items": sell_items, "items": items}) 
+
+from django.contrib.staticfiles.finders import find
+
+# In your function
+logo_path = find('images/company-logo.png')
+
+import os
+import logging
+from datetime import datetime
+from django.http import HttpResponse
+from django.conf import settings
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors 
 
 def generate_pdf(request):
-    """Generates and downloads the inventory report as a PDF."""
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = 'attachment; filename="inventory_report.pdf"'
-
+    
     pdf = canvas.Canvas(response, pagesize=letter)
     pdf.setTitle("Inventory Report")
-
+    
+    # Construct path to logo file
+    logo_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'company-logo.png')
+    
+    # Log the path for debugging
+    logging.debug(f"Attempting to load logo from: {logo_path}")
+    
+    try:
+        # Check if file exists before loading
+        if os.path.exists(logo_path):
+            pdf.drawImage(logo_path, 500, 740, width=100, height=50, preserveAspectRatio=True)
+            logging.debug("Logo loaded successfully")
+        else:
+            logging.warning(f"Logo file not found at: {logo_path}")
+    except Exception as e:
+        logging.error(f"Error loading logo: {e}")
+    
     # Title
     pdf.setFont("Helvetica-Bold", 16)
-    pdf.drawCentredString(300, 800, "Inventory Report")
-
+    pdf.drawCentredString(300, 760, "Inventory Report")
+    
+    # Get items first to avoid multiple queries
+    items = SellItem.objects.all()
+    row_count = len(items)
+    
+    # Calculate the bottom of the table
+    table_bottom = 680 - (row_count * 20)
+    
+    # Draw table borders and background
+    pdf.setStrokeColor(colors.black)
+    pdf.setFillColor(colors.lightgrey)
+    pdf.rect(50, 680, 500, 20, fill=1)  # Header row background
+    
+    # Vertical lines for the entire table
+    pdf.line(50, 700, 50, table_bottom)  # Left border
+    pdf.line(150, 700, 150, table_bottom)  # After Item Name
+    pdf.line(250, 700, 250, table_bottom)  # After Quantity
+    pdf.line(400, 700, 400, table_bottom)  # After Date
+    pdf.line(550, 700, 550, table_bottom)  # Right border
+    
     # Table Headers
+    pdf.setFillColor(colors.black)
     pdf.setFont("Helvetica-Bold", 12)
-    pdf.drawString(50, 750, "Item Name")
-    pdf.drawString(250, 750, "Quantity")
-    pdf.drawString(450, 750, "Selling Price (Rs)")
-
+    pdf.drawString(60, 685, "Item Name")
+    pdf.drawString(160, 685, "Quantity Sold")
+    pdf.drawString(300, 685, "Date")
+    pdf.drawString(440, 685, "Sales Price (Rs)")
+    
+    # Draw horizontal line below headers
+    pdf.line(50, 680, 550, 680)
+    
     # Data
-    y = 730
-    pdf.setFont("Helvetica", 12)
-    items = Item.objects.all()
-
-    for item in items:
-        pdf.drawString(50, y, item.ItemName)
-        pdf.drawString(270, y, str(item.NumberOfItems))
-        pdf.drawRightString(500, y, f"{item.SellingPrice:.2f}")
+    y = 660
+    pdf.setFont("Helvetica", 10)
+    
+    for i, sell_item in enumerate(items):
+        # Draw data
+        pdf.drawString(60, y + 5, sell_item.item.ItemName)
+        pdf.drawString(190, y + 5, str(sell_item.total_items_sold))
+        pdf.drawString(295, y + 5, str(sell_item.date_of_sales))
+        pdf.drawRightString(500, y + 5, f"{sell_item.total_sales_price:.2f}")
+        
+        # Draw horizontal line after each row
+        pdf.line(50, y, 550, y)
+        
         y -= 20  # Move down
-
+    
     pdf.save()
     return response

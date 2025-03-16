@@ -56,14 +56,16 @@
       <table>
         <tr>
           <th>Item Name</th>
-          <th>Quantity</th>
-          <th>Selling Price (Rs)</th>
+          <th>Quantity Sold</th>
+          <th>Sales Price (Rs)</th>
+          <th>Date</th>
         </tr>
-        {% for item in items %}
+        {% for sell_item in sell_items %}
         <tr>
-          <td>{{ item.ItemName }}</td>
-          <td>{{ item.NumberOfItems }}</td>
-          <td>{{ item.SellingPrice }}</td>
+          <td>{{ sell_item.item.ItemName }}</td>
+          <td>{{ sell_item.total_items_sold }}</td>
+          <td>{{ sell_item.total_sales_price }}</td>
+          <td>{{ sell_item.date_of_sales }}</td>
         </tr>
         {% endfor %}
       </table>
