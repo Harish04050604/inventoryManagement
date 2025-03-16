@@ -51,6 +51,7 @@
         display: flex;
         justify-content: center;
         margin-top: 20px;
+        gap: 20px;
       }
       button {
         padding: 12px 20px;
@@ -67,6 +68,22 @@
       }
       .add-button:hover {
         background-color: #009972;
+        transform: scale(1.05);
+      }
+      .cancel-button {
+        background-color: #00b894;
+        color: white;
+        text-decoration: none; /* Ensure button behaves like a link */
+        padding: 12px 25px; /* Adjust padding for better button size */
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: all 0.3s ease;
+        display: inline-block; /* Ensure button appears inline with other elements */
+      }
+
+      .cancel-button:hover {
+        opacity: 0.9;
         transform: scale(1.05);
       }
     </style>
@@ -95,6 +112,12 @@
 
         <div class="button-group">
           <button type="submit" class="add-button">Add to Item</button>
+          <a
+            href="{% url 'view_tasks' %}"
+            class="cancel-button"
+            style="text-decoration: none"
+            >Cancel</a
+          >
         </div>
       </form>
     </div>
