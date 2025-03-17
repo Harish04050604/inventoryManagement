@@ -612,7 +612,12 @@ def generate_pdf(request):
             bar_height = (profit / max_abs_profit) * chart_height
         
         x = 1*inch + i * bar_width + bar_spacing
-        y = chart_y if profit >= 0 else chart_y + bar_height
+        if profit >= 0:
+        # For profit bars, start from the baseline and go up
+            y = chart_y
+        else:
+        # For loss bars, start from the baseline and go down, but stay within the box
+            y = chart_y
         bar_height = abs(bar_height)
         pdf.setFillColor(colors.green if profit >= 0 else colors.red)
         pdf.rect(x, y, bar_width - 2*bar_spacing, bar_height, fill=1, stroke=0)
