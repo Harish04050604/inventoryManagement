@@ -269,98 +269,358 @@ def sell_item(request, item_name):
     return render(request, 'sell_item.html', {'item': item})
 
 
+from django.shortcuts import render
+from django.utils.timezone import now, timedelta
+from django.db.models import Sum
+from .models import SellItem, AddItem
+
 def generate_report(request):
-    """Renders the inventory report in HTML format."""
-    items = Item.objects.all()
-    sell_items=SellItem.objects.all()
-    return render(request, "report.html", {"sell_items": sell_items, "items": items}) 
+    """Renders the inventory report in HTML format with profit calculations."""
+
+    # Get the start and end dates of the current week (Monday-Sunday)
+    today = now().date()
+    start_of_week = today - timedelta(days=today.weekday())  # Monday
+    end_of_week = start_of_week + timedelta(days=6)  # Sunday
+
+    # Get sales and production data within the current week
+    sales = SellItem.objects.filter(date_of_sales__range=[start_of_week, end_of_week])
+    production = AddItem.objects.filter(date_of_production__range=[start_of_week, end_of_week])
+
+    # Calculate profit per day
+    daily_profit = {}
+    for day_offset in range(7):  # Loop through each day of the week
+        day = start_of_week + timedelta(days=day_offset)
+        total_sales = sales.filter(date_of_sales=day).aggregate(Sum('total_sales_price'))['total_sales_price__sum'] or 0
+        total_cost = production.filter(date_of_production=day).aggregate(Sum('total_production_cost'))['total_production_cost__sum'] or 0
+        daily_profit[day] = total_sales - total_cost
+
+    # Calculate total weekly profit
+    weekly_profit = sum(daily_profit.values())
+
+    return render(request, "report.html", {
+        "sell_items": sales,
+        "daily_profit": daily_profit,
+        "weekly_profit": weekly_profit
+    })
 
 from django.contrib.staticfiles.finders import find
 
 # In your function
 logo_path = find('images/company-logo.png')
 
-import os
-import logging
-from datetime import datetime
 from django.http import HttpResponse
-from django.conf import settings
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
-from reportlab.lib import colors 
+from reportlab.lib import colors
+from reportlab.lib.utils import ImageReader
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.units import inch
+from datetime import timedelta
+from django.utils.timezone import now
+from django.db.models import Sum, DecimalField
+from django.db.models.functions import Coalesce
+import os
+import logging
+from django.conf import settings
+from members.models import SellItem, AddItem  # Adjust your model imports
 
 def generate_pdf(request):
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = 'attachment; filename="inventory_report.pdf"'
     
+    # Get data
+    today = now().date()
+    start_of_week = today - timedelta(days=today.weekday())  # Monday
+    end_of_week = start_of_week + timedelta(days=6)  # Sunday
+
+    # Fetch sales data
+    sales = SellItem.objects.filter(date_of_sales__range=[start_of_week, end_of_week])
+
+    # Fetch production data and calculate daily profits
+    production = AddItem.objects.filter(date_of_production__range=[start_of_week, end_of_week])
+    
+    # Use proper aggregation with Coalesce to handle None values
+    daily_profit = {}
+    for day_offset in range(7):
+        day = start_of_week + timedelta(days=day_offset)
+        
+        # Use Coalesce to handle None values safely
+        total_sales = sales.filter(date_of_sales=day).aggregate(
+            total=Coalesce(Sum('total_sales_price'), 0, output_field=DecimalField())
+        )['total'] or 0
+        
+        total_cost = production.filter(date_of_production=day).aggregate(
+            total=Coalesce(Sum('total_production_cost'), 0, output_field=DecimalField())
+        )['total'] or 0
+        
+        # Convert to float to avoid decimal iteration issues
+        daily_profit[day] = float(total_sales) - float(total_cost)
+
+    # Calculate weekly profit as float
+    weekly_profit = sum(daily_profit.values())
+    
+    # Create PDF
     pdf = canvas.Canvas(response, pagesize=letter)
+    width, height = letter
+    
+    # Common functions
+    def add_page_elements(pdf, title):
+        # Add watermark
+        pdf.saveState()
+        pdf.setFont("Helvetica-Bold", 60)
+        pdf.setFillColor(colors.lightgrey.clone(alpha=0.3))  # Transparent watermark
+        pdf.rotate(45)
+        pdf.drawString(180, 40, "CONFIDENTIAL")
+        pdf.restoreState()
+        
+        # Add logo
+        logo_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'company-logo.png')
+        try:
+            if os.path.exists(logo_path):
+                pdf.drawImage(logo_path, width - 1.5*inch, height - 0.8*inch, width=1.2*inch, height=0.6*inch, preserveAspectRatio=True)
+        except Exception as e:
+            logging.error(f"Error loading logo: {e}")
+        
+        # Add header
+        pdf.setFont("Helvetica-Bold", 18)
+        pdf.setFillColor(colors.black)
+        pdf.drawString(1*inch, height - 1*inch, title)
+        
+        # Add date range
+        pdf.setFont("Helvetica", 10)
+        pdf.drawString(1*inch, height - 1.25*inch, f"Period: {start_of_week.strftime('%b %d, %Y')} - {end_of_week.strftime('%b %d, %Y')}")
+        
+        # Add horizontal line
+        pdf.setLineWidth(1)
+        pdf.line(1*inch, height - 1.4*inch, width - 1*inch, height - 1.4*inch)
+        
+        # Add page number
+        pdf.drawRightString(width - 1*inch, 0.5*inch, f"Page {pdf.getPageNumber()}")
+        
+        # Add footer
+        pdf.setFont("Helvetica-Oblique", 8)
+        pdf.drawCentredString(width/2, 0.5*inch, "Confidential - For Internal Use Only")
+        
+        return height - 1.7*inch  # Return Y position for content
+
+    # Page 1 - Available Stocks
     pdf.setTitle("Inventory Report")
+    y = add_page_elements(pdf, "Available Stocks Report")
     
-    # Construct path to logo file
-    logo_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'company-logo.png')
+    # Sales Table
+    data = [["Item Name", "Quantity Sold", "Date", "Sales Price (Rs)"]]
     
-    # Log the path for debugging
-    logging.debug(f"Attempting to load logo from: {logo_path}")
+    for sell_item in sales:
+        # Convert Decimal to float before formatting
+        sales_price = float(sell_item.total_sales_price) if sell_item.total_sales_price else 0
+        
+        data.append([
+            sell_item.item.ItemName,
+            str(sell_item.total_items_sold),
+            sell_item.date_of_sales.strftime("%b %d, %Y"),
+            f"{sales_price:,.2f}"
+        ])
     
-    try:
-        # Check if file exists before loading
-        if os.path.exists(logo_path):
-            pdf.drawImage(logo_path, 500, 740, width=100, height=50, preserveAspectRatio=True)
-            logging.debug("Logo loaded successfully")
-        else:
-            logging.warning(f"Logo file not found at: {logo_path}")
-    except Exception as e:
-        logging.error(f"Error loading logo: {e}")
+    # Calculate column widths
+    col_widths = [2.5*inch, 1.2*inch, 1.5*inch, 1.5*inch]
     
-    # Title
-    pdf.setFont("Helvetica-Bold", 16)
-    pdf.drawCentredString(300, 760, "Inventory Report")
+    # Create table
+    table = Table(data, colWidths=col_widths)
     
-    # Get items first to avoid multiple queries
-    items = SellItem.objects.all()
-    row_count = len(items)
+    # Style the table
+    table_style = TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+        ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+        ('ALIGN', (0, 1), (0, -1), 'LEFT'),
+        ('ALIGN', (1, 1), (-1, -1), 'RIGHT'),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 10),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('BOX', (0, 0), (-1, -1), 1, colors.black),
+    ])
     
-    # Calculate the bottom of the table
-    table_bottom = 680 - (row_count * 20)
+    # Add alternating row colors
+    for i in range(1, len(data)):
+        if i % 2 == 0:
+            table_style.add('BACKGROUND', (0, i), (-1, i), colors.lightgrey.clone(alpha=0.3))
     
-    # Draw table borders and background
-    pdf.setStrokeColor(colors.black)
-    pdf.setFillColor(colors.lightgrey)
-    pdf.rect(50, 680, 500, 20, fill=1)  # Header row background
+    table.setStyle(table_style)
     
-    # Vertical lines for the entire table
-    pdf.line(50, 700, 50, table_bottom)  # Left border
-    pdf.line(150, 700, 150, table_bottom)  # After Item Name
-    pdf.line(250, 700, 250, table_bottom)  # After Quantity
-    pdf.line(400, 700, 400, table_bottom)  # After Date
-    pdf.line(550, 700, 550, table_bottom)  # Right border
+    # Draw the table
+    table.wrapOn(pdf, width, height)
+    table.drawOn(pdf, 1*inch, y - (len(data) * 0.4*inch))
     
-    # Table Headers
-    pdf.setFillColor(colors.black)
+    # Add totals
+    y_total = y - (len(data) * 0.4*inch) - 0.5*inch
+    
+    # Calculate total sales safely
+    total_sales_value = 0
+    for item in sales:
+        if item.total_sales_price:
+            total_sales_value += float(item.total_sales_price)
+    
     pdf.setFont("Helvetica-Bold", 12)
-    pdf.drawString(60, 685, "Item Name")
-    pdf.drawString(160, 685, "Quantity Sold")
-    pdf.drawString(300, 685, "Date")
-    pdf.drawString(440, 685, "Sales Price (Rs)")
+    pdf.drawRightString(width - 1*inch, y_total, f"Total Sales: Rs {total_sales_value:,.2f}")
     
-    # Draw horizontal line below headers
-    pdf.line(50, 680, 550, 680)
+    # Move to next page
+    pdf.showPage()
+
+    # Page 2 - Profit of the Week
+    y = add_page_elements(pdf, "Weekly Profit Report")
     
-    # Data
-    y = 660
-    pdf.setFont("Helvetica", 10)
+    # Profit Table
+    profit_data = [["Date", "Sales (Rs)", "Costs (Rs)", "Profit (Rs)"]]
     
-    for i, sell_item in enumerate(items):
-        # Draw data
-        pdf.drawString(60, y + 5, sell_item.item.ItemName)
-        pdf.drawString(190, y + 5, str(sell_item.total_items_sold))
-        pdf.drawString(295, y + 5, str(sell_item.date_of_sales))
-        pdf.drawRightString(500, y + 5, f"{sell_item.total_sales_price:.2f}")
+    sorted_dates = sorted(daily_profit.keys())
+    for date in sorted_dates:
+        # Get sales and costs for the day safely
+        day_sales = sales.filter(date_of_sales=date).aggregate(
+            total=Coalesce(Sum('total_sales_price'), 0, output_field=DecimalField())
+        )['total'] or 0
         
-        # Draw horizontal line after each row
-        pdf.line(50, y, 550, y)
+        day_costs = production.filter(date_of_production=date).aggregate(
+            total=Coalesce(Sum('total_production_cost'), 0, output_field=DecimalField())
+        )['total'] or 0
         
-        y -= 20  # Move down
+        # Convert to float to avoid decimal iteration issues
+        day_sales_float = float(day_sales)
+        day_costs_float = float(day_costs)
+        
+        profit_data.append([
+            date.strftime("%a, %b %d"),
+            f"{day_sales_float:,.2f}",
+            f"{day_costs_float:,.2f}",
+            f"{daily_profit[date]:,.2f}"
+        ])
+    
+    # Calculate total sales and costs
+    total_sales_float = 0
+    for item in sales:
+        if item.total_sales_price:
+            total_sales_float += float(item.total_sales_price)
+    
+    total_costs_float = 0
+    for item in production:
+        if item.total_production_cost:
+            total_costs_float += float(item.total_production_cost)
+    
+    # Add totals row
+    profit_data.append([
+        "TOTAL",
+        f"{total_sales_float:,.2f}",
+        f"{total_costs_float:,.2f}",
+        f"{weekly_profit:,.2f}"
+    ])
+    
+    # Calculate column widths
+    profit_col_widths = [1.5*inch, 1.7*inch, 1.7*inch, 1.7*inch]
+    
+    # Create table
+    profit_table = Table(profit_data, colWidths=profit_col_widths)
+    
+    # Style the table
+    profit_style = TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+        ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -2), colors.white),
+        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+        ('ALIGN', (0, 1), (0, -1), 'LEFT'),
+        ('ALIGN', (1, 1), (-1, -1), 'RIGHT'),
+        ('FONTNAME', (0, 1), (-1, -2), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -2), 10),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('BOX', (0, 0), (-1, -1), 1, colors.black),
+        # Style for the total row
+        ('BACKGROUND', (0, -1), (-1, -1), colors.lightblue.clone(alpha=0.3)),
+        ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+        ('LINEABOVE', (0, -1), (-1, -1), 1, colors.black),
+    ])
+    
+    # Add alternating row colors
+    for i in range(1, len(profit_data)-1):
+        if i % 2 == 0:
+            profit_style.add('BACKGROUND', (0, i), (-1, i), colors.lightgrey.clone(alpha=0.3))
+    
+    profit_table.setStyle(profit_style)
+    
+    # Draw the table
+    profit_table.wrapOn(pdf, width, height)
+    profit_table.drawOn(pdf, 1*inch, y - (len(profit_data) * 0.4*inch))
+    
+    # Add profit/loss summary
+    y_summary = y - (len(profit_data) * 0.4*inch) - 1*inch
+    profit_status = "PROFIT" if weekly_profit >= 0 else "LOSS"
+    profit_color = colors.green if weekly_profit >= 0 else colors.red
+    
+    pdf.setFont("Helvetica-Bold", 14)
+    pdf.setFillColor(profit_color)
+    pdf.drawCentredString(width/2, y_summary, f"Weekly {profit_status}: Rs {abs(weekly_profit):,.2f}")
+    
+    # Add a simple bar chart for daily profits
+    chart_y = y_summary - 2*inch
+    chart_width = 6*inch
+    chart_height = 1.5*inch
+    
+    # Find max profit value safely
+    max_profit = 0
+    min_profit = 0
+    for profit in daily_profit.values():
+        if profit > max_profit:
+            max_profit = profit
+        if profit < min_profit:
+            min_profit = profit
+    
+    max_abs_profit = max(max_profit, abs(min_profit))
+    
+    # Draw chart title
+    pdf.setFont("Helvetica-Bold", 12)
+    pdf.setFillColor(colors.black)
+    pdf.drawString(1*inch, chart_y + chart_height + 0.2*inch, "Daily Profit Breakdown")
+    
+    # Draw chart background
+    pdf.setFillColor(colors.lightgrey.clone(alpha=0.3))
+    pdf.rect(1*inch, chart_y, chart_width, chart_height, fill=1, stroke=1)
+    
+    # Draw x-axis
+    pdf.setLineWidth(1)
+    pdf.line(1*inch, chart_y, 1*inch + chart_width, chart_y)
+    
+    # Draw y-axis
+    pdf.line(1*inch, chart_y, 1*inch, chart_y + chart_height)
+    
+    # Draw bars
+    bar_width = chart_width / len(daily_profit)
+    bar_spacing = 0.1 * bar_width
+    
+    for i, (date, profit) in enumerate(sorted(daily_profit.items())):
+        # Calculate bar height safely
+        bar_height = 0
+        if max_abs_profit > 0:  # Avoid division by zero
+            bar_height = (profit / max_abs_profit) * chart_height
+        
+        x = 1*inch + i * bar_width + bar_spacing
+        y = chart_y if profit >= 0 else chart_y + bar_height
+        bar_height = abs(bar_height)
+        pdf.setFillColor(colors.green if profit >= 0 else colors.red)
+        pdf.rect(x, y, bar_width - 2*bar_spacing, bar_height, fill=1, stroke=0)
+        
+        # Draw day label
+        pdf.setFont("Helvetica", 8)
+        pdf.setFillColor(colors.black)
+        pdf.drawCentredString(x + (bar_width - 2*bar_spacing)/2, chart_y - 0.2*inch, date.strftime("%a"))
     
     pdf.save()
     return response

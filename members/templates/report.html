@@ -57,7 +57,7 @@
         <tr>
           <th>Item Name</th>
           <th>Quantity Sold</th>
-          <th>Sales Price (Rs)</th>
+          <th>Total Sales Price (Rs)</th>
           <th>Date</th>
         </tr>
         {% for sell_item in sell_items %}
@@ -69,6 +69,20 @@
         </tr>
         {% endfor %}
       </table>
+      <table>
+        <tr>
+          <th>Date</th>
+          <th>Profit (Rs)</th>
+        </tr>
+        {% for date, profit in daily_profit.items %}
+        <tr>
+          <td>{{ date }}</td>
+          <td>{{ profit }}</td>
+        </tr>
+        {% endfor %}
+      </table>
+
+      <h2>Total Weekly Profit: Rs {{ weekly_profit }}</h2>
       <a href="{% url 'generate_pdf' %}" class="button">Download Report</a>
     </div>
   </body>
