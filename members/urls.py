@@ -18,4 +18,5 @@ urlpatterns = [
     path('view_report/', generate_report, name='view_report'),
     path('generate_pdf/', generate_pdf, name='generate_pdf'),
     path('add/<str:item_name>/', views.add_item, name='add_item'), 
+    path('delete-item/<str:item_name>/', views.delete_item, name='delete_item'),
 ]

@@ -221,6 +221,20 @@ def add_item(request, item_name):
     return render(request, "add_item.html", {"item": item})
 
 
+from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.csrf import ensure_csrf_cookie
+from .models import Item
+
+@ensure_csrf_cookie
+def delete_item(request, item_name):
+    item = get_object_or_404(Item, ItemName=item_name)
+
+    if request.method == 'POST':
+        item.delete()
+        return redirect('view_tasks')  # Redirect to the appropriate page after deletion
+
+    return render(request, 'delete_item.html', {'item': item})
+
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.db import transaction

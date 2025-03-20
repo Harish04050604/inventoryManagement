@@ -193,7 +193,7 @@
             </button>
             <button
               class="delete"
-              onclick="deleteItem('{{ item.ItemName }}')"
+              onclick="window.location.href='{% url 'delete_item' item.ItemName %}'"
               style="
                 background-color: #e74c3c;
                 color: white;

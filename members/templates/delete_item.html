@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Delete Item</title>
+    <style>
+      body {
+        font-family: "Arial", sans-serif;
+        background: linear-gradient(135deg, #6c5ce7, #00b894);
+        margin: 0;
+        padding: 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+      }
+      .delete-container {
+        background: #fff;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 500px;
+        text-align: center;
+      }
+      h1 {
+        color: #c0392b;
+        margin-bottom: 20px;
+      }
+      p {
+        font-size: 18px;
+        color: #2c3e50;
+        margin-bottom: 30px;
+      }
+      .button-group {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+      }
+      .button {
+        padding: 12px 25px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+      }
+      .delete-button {
+        background-color: #e74c3c;
+        color: white;
+      }
+      .cancel-button {
+        background-color: #95a5a6;
+        color: white;
+      }
+      .button:hover {
+        opacity: 0.9;
+        transform: scale(1.05);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="delete-container">
+      <h1>Confirm Deletion</h1>
+      <p>
+        Are you sure you want to delete <strong>{{ item.ItemName }}</strong>?
+      </p>
+      <form method="POST" action="{% url 'delete_item' item.ItemName %}">
+        {% csrf_token %}
+        <div class="button-group">
+          <button type="submit" class="button delete-button">Delete</button>
+          <a href="{% url 'view_tasks' %}" class="button cancel-button"
+            >Cancel</a
+          >
+        </div>
+      </form>
+    </div>
+  </body>
+</html>
