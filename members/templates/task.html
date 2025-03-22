@@ -87,6 +87,31 @@
         background-color: #e74c3c;
         color: white;
       }
+      .search-container {
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: center;
+      }
+      .search-container input {
+        padding: 10px;
+        width: 60%;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 16px;
+      }
+      .search-container button {
+        padding: 10px 15px;
+        background-color: #3498db;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        margin-left: 5px;
+        cursor: pointer;
+        font-size: 16px;
+      }
+      .search-container button:hover {
+        background-color: #2980b9;
+      }
       @media (max-width: 768px) {
         .task-container {
           padding: 20px;
@@ -98,59 +123,29 @@
           padding: 6px 12px;
           font-size: 14px;
         }
-      }
-    </style>
-    <script>
-      function updateQuantity(itemName, action) {
-        fetch("{% url 'update_quantity' %}", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-            "X-CSRFToken": "{{ csrf_token }}",
-          },
-          body: `item_name=${itemName}&action=${action}`,
-        })
-          .then((response) => response.json())
-          .then((data) => {
-            if (data.success) {
-              document.getElementById(`count-${itemName}`).innerText =
-                data.new_quantity;
-            }
-          });
-      }
-      function deleteItem(itemName) {
-        if (confirm(`Are you sure you want to delete ${itemName}?`)) {
-          fetch("{% url 'delete_item' %}", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/x-www-form-urlencoded",
-              "X-CSRFToken": "{{ csrf_token }}",
-            },
-            body: `item_name=${itemName}`,
-          })
-            .then((response) => response.json())
-            .then((data) => {
-              if (data.success) {
-                // Remove the table row from the UI
-                const row = document.querySelector(
-                  `tr:has(td[id="count-${itemName}"])`
-                );
-                row.remove();
-              } else {
-                alert("Error deleting item. Please try again.");
-              }
-            })
-            .catch((error) => {
-              console.error("Error:", error);
-              alert("Error deleting item. Please try again.");
-            });
+        .search-container input {
+          width: 70%;
         }
       }
-    </script>
+    </style>
   </head>
   <body>
     <div class="task-container">
       <h1>Task List</h1>
+
+      <!-- Search Bar -->
+      <div class="search-container">
+        <form method="GET" action="{% url 'search_item' %}">
+          <input
+            type="text"
+            name="query"
+            placeholder="Search items..."
+            value="{{ query }}"
+          />
+          <button type="submit">Search</button>
+        </form>
+      </div>
+
       <table>
         <tr>
           <th>Item Name</th>
@@ -208,8 +203,13 @@
             </button>
           </td>
         </tr>
+        {% empty %}
+        <tr>
+          <td colspan="4">No items found.</td>
+        </tr>
         {% endfor %}
       </table>
+
       <a href="{% url 'add_items' %}" class="button">Add New Item</a>
       <a href="{% url 'staff' %}" class="button">Back</a>
     </div>

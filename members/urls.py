@@ -3,8 +3,8 @@ from . import views
 from .views import generate_report, generate_pdf
 
 urlpatterns = [
-    path('',views.login,name='login'), # 1st page
-    path('signup/',views.signup,name='signup'),
+    path('', views.login, name='login'),  # 1st page
+    path('signup/', views.signup, name='signup'),
     path('login/', views.login, name='login'),
     path('manager/', views.manager, name='manager'),
     path('staff/', views.staff, name='staff'),
@@ -19,4 +19,5 @@ urlpatterns = [
     path('generate_pdf/', generate_pdf, name='generate_pdf'),
     path('add/<str:item_name>/', views.add_item, name='add_item'), 
     path('delete-item/<str:item_name>/', views.delete_item, name='delete_item'),
+    path("search/", views.search_item, name="search_item"),  # Added search functionality
 ]
