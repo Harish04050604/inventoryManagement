@@ -647,8 +647,8 @@ def generate_pdf(request):
 def search_item(request):
     query = request.GET.get("query", "")
     if query:
-        items = Item.objects.filter(ItemName__icontains=query)  # Case-insensitive search
+        items = Item.objects.filter(ItemName__istartswith=query)  # Case-insensitive search from left to right
     else:
         items = Item.objects.all()  # If no search query, show all items
-
+    
     return render(request, "task.html", {"items": items})
