@@ -652,3 +652,62 @@ def search_item(request):
         items = Item.objects.all()  # If no search query, show all items
     
     return render(request, "task.html", {"items": items})
+
+
+from datetime import timedelta
+from .models import SellItem, ForecastData, Item
+from statsmodels.tsa.arima.model import ARIMA
+import pandas as pd
+import numpy as np
+from django.shortcuts import render
+from django.utils import timezone
+
+def forecast_demand(request):
+    items = SellItem.objects.all().select_related('item')
+
+    if not items:
+        return render(request, 'forecast.html', {'error': 'No sales data found.'})
+
+    df = pd.DataFrame(list(items.values('item__ItemName', 'date_of_sales', 'total_items_sold')))
+    df['date_of_sales'] = pd.to_datetime(df['date_of_sales'])
+
+    forecasts = []
+
+    for item_name in df['item__ItemName'].unique():
+        item_data = df[df['item__ItemName'] == item_name].copy()
+        item_data.set_index('date_of_sales', inplace=True)
+        item_data = item_data.resample('W').sum()
+        item_data = item_data[item_data['total_items_sold'] > 0].dropna()
+
+        if item_data.empty or len(item_data) < 8:
+            forecasts.append({'item_name': item_name, 'forecast': 'Not enough data'})
+            continue
+
+        try:
+            model = ARIMA(item_data['total_items_sold'], order=(1, 1, 1))
+            fitted_model = model.fit()
+            forecast = fitted_model.forecast(steps=1)
+            forecast_value = round(np.atleast_1d(forecast)[0])
+
+            # Save to ForecastData table
+            item_instance = Item.objects.get(ItemName=item_name)
+            ForecastData.objects.create(
+                item=item_instance,
+                forecasted_demand=forecast_value,
+                forecast_date=timezone.now().date()
+            )
+
+            forecasts.append({
+                'item_name': item_name,
+                'forecast': forecast_value
+            })
+
+        except Exception as e:
+            forecasts.append({
+                'item_name': item_name,
+                'forecast': 'Error: ' + str(e)
+            })
+
+    return render(request, 'forecast.html', {'forecasts': forecasts})
+
+

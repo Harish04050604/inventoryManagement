@@ -44,3 +44,10 @@ class SellItem(models.Model):
 
     def __str__(self):
         return f"{self.total_items_sold} sold for {self.item.ItemName} on {self.date_of_sales}"
+    
+# members/models.py
+class ForecastData(models.Model):
+    item = models.ForeignKey(Item, on_delete=models.CASCADE)
+    forecast_date = models.DateField(auto_now_add=True)
+    forecasted_demand = models.IntegerField()
+

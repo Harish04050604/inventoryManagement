@@ -20,4 +20,5 @@ urlpatterns = [
     path('add/<str:item_name>/', views.add_item, name='add_item'), 
     path('delete-item/<str:item_name>/', views.delete_item, name='delete_item'),
     path("search/", views.search_item, name="search_item"),  # Added search functionality
+    path('forecast/', views.forecast_demand, name='forecast'),
 ]

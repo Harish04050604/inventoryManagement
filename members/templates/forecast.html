@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Forecast Demand</title>
+    <style>
+      :root {
+        --primary: #4361ee;
+        --primary-hover: #3a56d4;
+        --white: #ffffff;
+        --text-dark: #333333;
+        --success: #2ecc71;
+      }
+
+      body {
+        font-family: Arial, sans-serif;
+        padding: 2rem;
+        background-color: #f0f8ff;
+      }
+
+      h2 {
+        color: #333;
+      }
+
+      table {
+        width: 80%;
+        margin-top: 1rem;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        border: 1px solid #aaa;
+        padding: 0.75rem;
+        text-align: left;
+      }
+
+      th {
+        background-color: #4361ee;
+        color: white;
+      }
+
+      .buttons-container {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-top: 2rem;
+      }
+
+      .button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.8rem 1.5rem;
+        background-color: var(--primary);
+        color: var(--white);
+        font-size: 1rem;
+        font-weight: 600;
+        border-radius: 8px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        min-width: 150px;
+        border: none;
+        cursor: pointer;
+      }
+
+      .button:hover {
+        background-color: var(--primary-hover);
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+      }
+
+      .button:active {
+        transform: translateY(-1px);
+      }
+
+      .button.secondary {
+        background-color: transparent;
+        color: var(--text-dark);
+        border: 2px solid #e2e8f0;
+      }
+
+      .button.secondary:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+        background-color: rgba(67, 97, 238, 0.05);
+        box-shadow: none;
+      }
+
+      .status-indicator {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        background-color: var(--success);
+        color: white;
+        font-size: 0.85rem;
+        border-radius: 50px;
+        margin-bottom: 1.5rem;
+        font-weight: 500;
+      }
+
+      @media (max-width: 600px) {
+        .dashboard-container {
+          padding: 1.75rem;
+          max-width: 90%;
+        }
+
+        h1 {
+          font-size: 2rem;
+        }
+
+        .buttons-container {
+          flex-direction: column;
+        }
+
+        .button {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Next Week Demand Forecast</h2>
+
+    <!-- Inside body after table -->
+    {% if forecasts %}
+    <table>
+      <tr>
+        <th>Item Name</th>
+        <th>Forecasted Demand</th>
+      </tr>
+      {% for forecast in forecasts %}
+      <tr>
+        <td>{{ forecast.item_name }}</td>
+        <td>{{ forecast.forecast }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+
+    <h3 style="margin-top: 3rem">Forecast Chart</h3>
+    <canvas id="forecastChart" width="800" height="400"></canvas>
+
+    <!-- Inject data for JS -->
+    {{ forecasts|json_script:"forecast-data" }}
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+      const forecastData = JSON.parse(
+        document.getElementById("forecast-data").textContent
+      );
+
+      const itemLabels = forecastData.map((f) => f.item_name);
+      const itemData = forecastData.map((f) => f.forecast);
+
+      const ctx = document.getElementById("forecastChart").getContext("2d");
+      new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: itemLabels,
+          datasets: [
+            {
+              label: "Forecasted Demand for Next Week",
+              data: itemData,
+              backgroundColor: "rgba(54, 162, 235, 0.6)",
+              borderColor: "rgba(54, 162, 235, 1)",
+              borderWidth: 1,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: "Items Sold",
+              },
+            },
+          },
+        },
+      });
+    </script>
+    {% else %}
+    <p>No data available.</p>
+    {% endif %}
+
+    <div class="buttons-container">
+      <a href="{% url 'manager' %}" class="button">Back to Dashboard</a>
+    </div>
+  </body>
+</html>
