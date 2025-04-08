@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.env
+.venv
+venv/
+ENV/
+env/
+.DS_Store
+.idea/
+.vscode/
+*.sqlite3
+.pytest_cache/
+poetry.lock
